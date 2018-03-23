@@ -1,0 +1,74 @@
+version: '3'
+
+services:
+
+### NODE Container ########################################
+
+  node:
+    build:
+      context: ./node
+    environment:
+      - NODE_ENV=${NODE_ENVIRONMENT}
+    volumes:
+      - ${APPLICATION}${node}:/var/www
+    ports:
+      - "${NODE_PORT}:8888"
+    command: "${NODE_COMMAND}"
+    networks: 
+      - frontend
+
+
+### PHP-FPM Container #####################################
+
+  php-fpm:
+    build:
+      context: ./php-fpm
+      dockerfile: Dockerfile${PHP_VERSION}
+    volumes:
+      - ${APPLICATION}:/var/www
+      - ./php-fpm/php${PHP_VERSION}.ini:/usr/local/etc/php/php.ini
+    expose:
+      - "9000"
+    networks:
+      - frontend
+
+### NGINX Server Container ################################
+
+  nginx:
+    build:
+      context: ./nginx
+    volumes:
+      - ${APPLICATION}:/var/www
+      - ${NGINX_HOST_LOG_PATH}:/var/log/nginx
+      - ${NGINX_SITES_PATH}:/etc/nginx/sites-available
+    ports:
+      - "${NGINX_HOST_HTTP_PORT}:80"
+      - "${NGINX_HOST_HTTPS_PORT}:443"
+    depends_on:
+      - php-fpm
+    networks:
+      - frontend
+
+### couchdb Container #######################################
+  couchdb:
+    build:
+      context: ./couchdb
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=admin
+    volumes:
+      - ${DATA_SAVE_PATH}/couchdb/:/opt/couchdb/data
+      - ./couchdb/:/usr/local/etc/couchdb/
+      - ./logs/couchdb/:/usr/local/var/log/couchdb/
+    depends_on:
+      - php-fpm
+    ports:
+      - "${COUCHDB_PORT}:5984"
+    networks:
+      - frontend
+
+### Networks Setup ########################################
+
+networks:
+  frontend:
+    driver: "bridge"
