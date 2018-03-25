@@ -4,7 +4,7 @@
 #--------------------------------------------------------------------------
 #
 
-FROM php:7.2-fpm
+FROM php:7.1-fpm
 
 MAINTAINER Leo Qin
 
@@ -43,8 +43,9 @@ RUN docker-php-ext-install pdo_mysql \
 	docker-php-ext-install gd
 
 # update timezone
-RUN /bin/cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
-	&& echo "Asia/Shanghai" > /etc/timezone;
+ARG TIMEZONE=Asia/Shanghai
+RUN /bin/cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime \
+	&& echo "${TIMEZONE}" > /etc/timezone;
 	
 WORKDIR /var/www
 
